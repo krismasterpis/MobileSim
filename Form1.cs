@@ -19,9 +19,15 @@ namespace MobileSim
         private const float MinZoom = 0.2f;
         private const float MaxZoom = 5.0f;
 
+        private int basesCount = 0;
+        private int obstaclesCount = 0;
+
+        private bool signalLineEnab = false;
+
         private MapCell[,] map = new MapCell[GridCount, GridCount];
         private PlacementMode currentMode = PlacementMode.BaseStation;
         private List<BaseStation> baseStations = new List<BaseStation>();
+        private BaseStation bestStation;
         MobileDevice senderDev;
         MobileDevice receiverDev;
         private List<Rectangle> obstacles = new List<Rectangle>();
@@ -113,6 +119,22 @@ namespace MobileSim
                     g.DrawRectangle(Pens.LightGray, rect);
                 }
             }
+
+            if (signalLineEnab && bestStation != null && senderDev != null && receiverDev != null)
+            {
+                using (Pen Pen = new Pen(Color.Red, 3))
+                {
+                    // Punkty pocz¹tkowy i koñcowy linii
+                    Point senderPoint = new Point(senderDev.X * CellSize + CellSize / 2, senderDev.Y * CellSize + CellSize / 2);
+                    Point basePoint = new Point(bestStation.X * CellSize + CellSize / 2, bestStation.Y * CellSize + CellSize / 2);
+                    Point receiverPoint = new Point(receiverDev.X * CellSize + CellSize / 2, receiverDev.Y * CellSize + CellSize / 2);
+
+                    // Narysuj liniê
+                    e.Graphics.DrawLine(Pen, senderPoint, basePoint);
+                    e.Graphics.DrawLine(Pen, basePoint, receiverPoint);
+                }
+            }
+
             using (Font emojiFont = new Font("Segoe UI Emoji", 10))
             {
                 string emoji;
@@ -156,30 +178,83 @@ namespace MobileSim
 
         private void pictureBoxMap_MouseClick(object sender, MouseEventArgs e)
         {
+            signalLineEnab = false;
             int x = e.X / (int)(CellSize * zoomFactor);
             int y = e.Y / (int)(CellSize * zoomFactor);
             if (x < 0 || y < 0 || x >= GridCount || y >= GridCount) return;
-
-            switch (currentMode)
+            if (map[x, y].Type != CellType.Empty)
             {
-                case PlacementMode.BaseStation:
-                    map[x, y].Type = CellType.BaseStation;
-                    BaseStation station = new BaseStation(x,y,10,10);
-                    baseStations.Add(station);
-                    break;
-                case PlacementMode.Obstacle:
-                    map[x, y].Type = CellType.Obstacle;
-                    var obstacle = new Rectangle(x,y,CellSize,CellSize);
-                    obstacles.Add(obstacle);
-                    break;
-                case PlacementMode.Sender:
-                    map[x, y].Type = CellType.Sender;
-                    senderDev = new MobileDevice(x,y);
-                    break;
-                case PlacementMode.Receiver:
-                    map[x, y].Type = CellType.Receiver;
-                    receiverDev = new MobileDevice(x, y);
-                    break;
+                if(map[x, y].Type == CellType.BaseStation)
+                {
+                    if(basesCount > 0)
+                    {
+                        basesCount--;
+                        baseStations.RemoveAt(baseStations.FindIndex(item => item.X == x && item.Y == y));
+                        label2.Text = $"Base stations ({basesCount}/10)";
+                    }
+                }
+                if (map[x, y].Type == CellType.Obstacle)
+                {
+                    if (obstaclesCount > 0)
+                    {
+                        obstaclesCount--;
+                        obstacles.RemoveAt(obstacles.FindIndex(item => item.X == x && item.Y == y));
+                        label3.Text = $"Obstacles ({obstaclesCount}/50)";
+                    }
+                }
+                if (map[x, y].Type == CellType.Receiver)
+                {
+                    receiverDev = null;
+                    label4.Text = $"Receivers (0/1)";
+                }
+                if (map[x, y].Type == CellType.Sender)
+                {
+                    senderDev = null;
+                    label4.Text = $"Senders (0/1)";
+                }
+                map[x, y].Type = CellType.Empty;
+            }
+            else
+            {
+                switch (currentMode)
+                {
+                    case PlacementMode.BaseStation:
+                        if (baseStations.Count() < 10 && map[x, y].Type != CellType.BaseStation)
+                        {
+                            map[x, y].Type = CellType.BaseStation;
+                            BaseStation station = new BaseStation(x, y, 6, 30,true,90,90);
+                            baseStations.Add(station);
+                            basesCount++;
+                            label2.Text = $"Base stations ({basesCount}/10)";
+                        }
+                        break;
+                    case PlacementMode.Obstacle:
+                        if (obstacles.Count() < 50 && map[x, y].Type != CellType.Obstacle)
+                        {
+                            map[x, y].Type = CellType.Obstacle;
+                            var obstacle = new Rectangle(x, y, CellSize, CellSize);
+                            obstacles.Add(obstacle);
+                            obstaclesCount++;
+                            label3.Text = $"Obstacles ({obstaclesCount}/50)";
+                        }
+                        break;
+                    case PlacementMode.Sender:
+                        if (senderDev == null && map[x, y].Type != CellType.Sender)
+                        {
+                            map[x, y].Type = CellType.Sender;
+                            senderDev = new MobileDevice(x, y);
+                            label4.Text = $"Senders (1/1)";
+                        }
+                        break;
+                    case PlacementMode.Receiver:
+                        if (receiverDev == null && map[x, y].Type != CellType.Receiver)
+                        {
+                            map[x, y].Type = CellType.Receiver;
+                            receiverDev = new MobileDevice(x, y);
+                            label5.Text = $"Receivers (1/1)";
+                        }
+                        break;
+                }
             }
             pictureBoxMap.Invalidate();
             Debug.WriteLine($"Selected X: {x}, Y:{y}");
@@ -230,7 +305,7 @@ namespace MobileSim
         public BaseStation FindBestStation(List<BaseStation> stations, MobileDevice sender, MobileDevice receiver, List<Rectangle> obstacles)
         {
             BaseStation bestStation = null;
-            double maxSignal = double.MinValue;
+            double maxSignal = -80;
 
             foreach (var station in stations)
             {
@@ -239,16 +314,17 @@ namespace MobileSim
                 {
                     if (IntersectsLine(obs, station.X, station.Y, receiver.X, receiver.Y))
                     {
-                        obstacleLoss += 10; // ka¿dy budynek np. -10 dB
+                        obstacleLoss += 5; // ka¿dy budynek np. -5 dB
                     }
                     if (IntersectsLine(obs, station.X, station.Y, sender.X, sender.Y))
                     {
-                        obstacleLoss += 10; // ka¿dy budynek np. -10 dB
+                        obstacleLoss += 5; // ka¿dy budynek np. -5 dB
                     }
                 }
 
-                double signal = station.CalculateSignalStrength(receiver.X, receiver.Y, obstacleLoss);
-
+                //double signal = station.CalculateSignalStrength(receiver.X, receiver.Y, obstacleLoss);
+                double signal = station.IsWithinCoverage(receiver.X, receiver.Y, sender.X, sender.Y, obstacleLoss);
+                Debug.WriteLine($"Signal power : {signal}");
                 if (signal > maxSignal)
                 {
                     maxSignal = signal;
@@ -261,8 +337,13 @@ namespace MobileSim
 
         private void button1_Click(object sender, EventArgs e)
         {
-            var beststation = FindBestStation(baseStations,senderDev, receiverDev, obstacles);
-            Debug.WriteLine($"Best station is located on X:{beststation.X} and Y:{beststation.Y}");
+            bestStation = FindBestStation(baseStations, senderDev, receiverDev, obstacles);
+            if (bestStation != null)
+            {
+                Debug.WriteLine($"Best station is located on X:{bestStation.X} and Y:{bestStation.Y}");
+                signalLineEnab = true;
+            }
+            pictureBoxMap.Invalidate();
         }
     }
     public enum CellType { Empty, BaseStation, Obstacle, Sender, Receiver }

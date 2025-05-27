@@ -41,16 +41,23 @@
             pictureBoxMap = new PictureBox();
             mapPanel = new Panel();
             panel3 = new Panel();
+            button2 = new Button();
+            groupBox3 = new GroupBox();
+            trackBar1 = new TrackBar();
             panel1.SuspendLayout();
             groupBox2.SuspendLayout();
             groupBox1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBoxMap).BeginInit();
             mapPanel.SuspendLayout();
+            panel3.SuspendLayout();
+            groupBox3.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)trackBar1).BeginInit();
             SuspendLayout();
             // 
             // panel1
             // 
             panel1.BackColor = SystemColors.ControlDark;
+            panel1.Controls.Add(groupBox3);
             panel1.Controls.Add(button1);
             panel1.Controls.Add(groupBox2);
             panel1.Controls.Add(groupBox1);
@@ -58,7 +65,7 @@
             panel1.Location = new Point(0, 0);
             panel1.Name = "panel1";
             panel1.Padding = new Padding(3);
-            panel1.Size = new Size(181, 1041);
+            panel1.Size = new Size(181, 681);
             panel1.TabIndex = 0;
             // 
             // button1
@@ -89,41 +96,37 @@
             // 
             // label5
             // 
-            label5.AutoSize = true;
             label5.Dock = DockStyle.Top;
             label5.Location = new Point(3, 64);
             label5.Name = "label5";
-            label5.Size = new Size(84, 15);
+            label5.Size = new Size(169, 15);
             label5.TabIndex = 5;
             label5.Text = "Receivers (0/1)";
             // 
             // label4
             // 
-            label4.AutoSize = true;
             label4.Dock = DockStyle.Top;
             label4.Location = new Point(3, 49);
             label4.Name = "label4";
-            label4.Size = new Size(76, 15);
+            label4.Size = new Size(169, 15);
             label4.TabIndex = 4;
             label4.Text = "Senders (0/1)";
             // 
             // label3
             // 
-            label3.AutoSize = true;
             label3.Dock = DockStyle.Top;
             label3.Location = new Point(3, 34);
             label3.Name = "label3";
-            label3.Size = new Size(92, 15);
+            label3.Size = new Size(169, 15);
             label3.TabIndex = 3;
             label3.Text = "Obstacles (0/50)";
             // 
             // label2
             // 
-            label2.AutoSize = true;
             label2.Dock = DockStyle.Top;
             label2.Location = new Point(3, 19);
             label2.Name = "label2";
-            label2.Size = new Size(109, 15);
+            label2.Size = new Size(169, 15);
             label2.TabIndex = 2;
             label2.Text = "Base stations (0/10)";
             // 
@@ -177,36 +180,72 @@
             mapPanel.Dock = DockStyle.Left;
             mapPanel.Location = new Point(181, 0);
             mapPanel.Name = "mapPanel";
-            mapPanel.Size = new Size(1002, 1041);
+            mapPanel.Size = new Size(1002, 681);
             mapPanel.TabIndex = 2;
             // 
             // panel3
             // 
             panel3.BackColor = SystemColors.ControlDark;
-            panel3.Dock = DockStyle.Fill;
+            panel3.Controls.Add(button2);
+            panel3.Dock = DockStyle.Right;
             panel3.Location = new Point(1183, 0);
             panel3.Name = "panel3";
             panel3.Padding = new Padding(3);
-            panel3.Size = new Size(721, 1041);
+            panel3.Size = new Size(721, 681);
             panel3.TabIndex = 1;
+            // 
+            // button2
+            // 
+            button2.Dock = DockStyle.Top;
+            button2.Location = new Point(3, 3);
+            button2.Name = "button2";
+            button2.Size = new Size(715, 23);
+            button2.TabIndex = 0;
+            button2.Text = "button2";
+            button2.UseVisualStyleBackColor = true;
+            // 
+            // groupBox3
+            // 
+            groupBox3.Controls.Add(trackBar1);
+            groupBox3.Dock = DockStyle.Top;
+            groupBox3.Location = new Point(3, 268);
+            groupBox3.Name = "groupBox3";
+            groupBox3.Size = new Size(175, 183);
+            groupBox3.TabIndex = 4;
+            groupBox3.TabStop = false;
+            groupBox3.Text = "Base station parameters";
+            // 
+            // trackBar1
+            // 
+            trackBar1.Dock = DockStyle.Top;
+            trackBar1.Location = new Point(3, 19);
+            trackBar1.Name = "trackBar1";
+            trackBar1.Size = new Size(169, 45);
+            trackBar1.TabIndex = 0;
+            trackBar1.TickStyle = TickStyle.None;
             // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1904, 1041);
+            AutoScroll = true;
+            ClientSize = new Size(1904, 681);
             Controls.Add(panel3);
             Controls.Add(mapPanel);
             Controls.Add(panel1);
+            MinimumSize = new Size(600, 400);
             Name = "Form1";
             Text = "Form1";
             WindowState = FormWindowState.Maximized;
             panel1.ResumeLayout(false);
             groupBox2.ResumeLayout(false);
-            groupBox2.PerformLayout();
             groupBox1.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)pictureBoxMap).EndInit();
             mapPanel.ResumeLayout(false);
+            panel3.ResumeLayout(false);
+            groupBox3.ResumeLayout(false);
+            groupBox3.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)trackBar1).EndInit();
             ResumeLayout(false);
         }
 
@@ -225,5 +264,8 @@
         private Label label5;
         private Label label4;
         private Label label3;
+        private Button button2;
+        private GroupBox groupBox3;
+        private TrackBar trackBar1;
     }
 }
