@@ -515,18 +515,18 @@ namespace MobileSim
                             Debug.WriteLine($"Best station is located on X:{bestStation.X} and Y:{bestStation.Y}");
                             signalLineEnab = true;
                         }*/
-            if (baseStations.Count() > 2)
+            if (baseStations.Count() > 0)
             {
                 bestPath = PathFinder.findBestPath2(map, baseStations, senderDev, receiverDev);
-            }
-            if (bestPath != null)
-            {
-                Logg($"Sender ({senderDev.X};{senderDev.Y}) connected with receiver ({receiverDev.X};{receiverDev.Y})");
-                signalLineEnab = true;
-            }
-            else
-            {
-                Logg("Sender or Receiver is out of all station's ranges");
+                if (bestPath != null)
+                {
+                    Logg($"Sender ({senderDev.X};{senderDev.Y}) connected with receiver ({receiverDev.X};{receiverDev.Y})");
+                    signalLineEnab = true;
+                }
+                else
+                {
+                    Logg("Sender or Receiver is out of all station's ranges");
+                }
             }
             pictureBoxMap.Invalidate();
         }

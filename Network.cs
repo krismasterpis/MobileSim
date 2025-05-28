@@ -161,26 +161,43 @@ namespace MobileSim
             Path Path = new Path();
             var perms = GetAllPathsWithOptionalStations(stations, senderStation, receiverStation);
             var smallestDist = 100000.0;
-            foreach(var perm in perms)
+            if (perms.Count > 0)
             {
-                double distance = 0.0;
-                var pathTemp = new Path();
-                for(int i = 0; i<perm.Count()-1; i++)
+                foreach (var perm in perms)
                 {
-                    float dx = perm[i].X - perm[i + 1].X;
-                    float dy = perm[i].Y - perm[i + 1].Y;
-                    var temp = Math.Sqrt(dx * dx + dy * dy);
-                    distance += temp;
+                    double distance = 0.0;
+                    var pathTemp = new Path();
+                    for (int i = 0; i < perm.Count() - 1; i++)
+                    {
+                        float dx = perm[i].X - perm[i + 1].X;
+                        float dy = perm[i].Y - perm[i + 1].Y;
+                        var temp = Math.Sqrt(dx * dx + dy * dy);
+                        distance += temp;
+                    }
+                    pathTemp.stations.AddRange(perm);
+                    pathTemp.distance = distance;
+                    if (smallestDist > distance)
+                    {
+                        smallestDist = distance;
+                    }
+                    PathList.Add(pathTemp);
                 }
-                pathTemp.stations.AddRange(perm);
-                pathTemp.distance = distance;
-                if(smallestDist > distance)
-                {
-                    smallestDist = distance;
-                }
-                PathList.Add(pathTemp);
+                Path = PathList[PathList.FindIndex(item => item.distance == smallestDist)];
             }
-            Path = PathList[PathList.FindIndex(item => item.distance == smallestDist)];
+            else //przypadek dla mniej niż 3 stacji
+            {
+                if(senderStation == receiverStation)
+                {
+                    Path.stations.Add(senderStation);
+                    Path.distance = 0;
+                }
+                else
+                {
+                    Path.stations.Add(senderStation);
+                    Path.stations.Add(receiverStation);
+                    Path.distance = 0;
+                }
+            }
             return Path;
         }
 
