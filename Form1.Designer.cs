@@ -39,7 +39,18 @@
             label7 = new Label();
             label6 = new Label();
             groupBox3 = new GroupBox();
+            numericUpDownBeamWidth = new NumericUpDown();
+            labelBW = new Label();
+            numericUpDownDirection = new NumericUpDown();
+            labelDirection = new Label();
+            comboBox1 = new ComboBox();
+            label17 = new Label();
+            trackBar3 = new TrackBar();
+            labelHeight = new Label();
+            trackBar2 = new TrackBar();
+            labelTransmit = new Label();
             trackBar1 = new TrackBar();
+            labelGain = new Label();
             button1 = new Button();
             groupBox2 = new GroupBox();
             label5 = new Label();
@@ -53,30 +64,20 @@
             mapPanel = new Panel();
             panel3 = new Panel();
             loggerTextBox = new TextBox();
-            trackBar2 = new TrackBar();
-            trackBar3 = new TrackBar();
-            label14 = new Label();
-            label15 = new Label();
-            label16 = new Label();
-            label17 = new Label();
-            label18 = new Label();
-            comboBox1 = new ComboBox();
-            label19 = new Label();
-            numericUpDown1 = new NumericUpDown();
-            numericUpDown2 = new NumericUpDown();
+            button2 = new Button();
             panel1.SuspendLayout();
             groupBox4.SuspendLayout();
             groupBox3.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)numericUpDownBeamWidth).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)numericUpDownDirection).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)trackBar3).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)trackBar2).BeginInit();
             ((System.ComponentModel.ISupportInitialize)trackBar1).BeginInit();
             groupBox2.SuspendLayout();
             groupBox1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBoxMap).BeginInit();
             mapPanel.SuspendLayout();
             panel3.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)trackBar2).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)trackBar3).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)numericUpDown1).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)numericUpDown2).BeginInit();
             SuspendLayout();
             // 
             // panel1
@@ -186,18 +187,18 @@
             // 
             // groupBox3
             // 
-            groupBox3.Controls.Add(numericUpDown2);
-            groupBox3.Controls.Add(label19);
-            groupBox3.Controls.Add(numericUpDown1);
-            groupBox3.Controls.Add(label18);
+            groupBox3.Controls.Add(numericUpDownBeamWidth);
+            groupBox3.Controls.Add(labelBW);
+            groupBox3.Controls.Add(numericUpDownDirection);
+            groupBox3.Controls.Add(labelDirection);
             groupBox3.Controls.Add(comboBox1);
             groupBox3.Controls.Add(label17);
             groupBox3.Controls.Add(trackBar3);
-            groupBox3.Controls.Add(label14);
+            groupBox3.Controls.Add(labelHeight);
             groupBox3.Controls.Add(trackBar2);
-            groupBox3.Controls.Add(label15);
+            groupBox3.Controls.Add(labelTransmit);
             groupBox3.Controls.Add(trackBar1);
-            groupBox3.Controls.Add(label16);
+            groupBox3.Controls.Add(labelGain);
             groupBox3.Dock = DockStyle.Top;
             groupBox3.Location = new Point(3, 268);
             groupBox3.Name = "groupBox3";
@@ -206,15 +207,131 @@
             groupBox3.TabStop = false;
             groupBox3.Text = "Base station parameters";
             // 
+            // numericUpDownBeamWidth
+            // 
+            numericUpDownBeamWidth.Dock = DockStyle.Top;
+            numericUpDownBeamWidth.Location = new Point(3, 230);
+            numericUpDownBeamWidth.Maximum = new decimal(new int[] { 180, 0, 0, 0 });
+            numericUpDownBeamWidth.Name = "numericUpDownBeamWidth";
+            numericUpDownBeamWidth.Size = new Size(169, 23);
+            numericUpDownBeamWidth.TabIndex = 11;
+            numericUpDownBeamWidth.ValueChanged += numericUpDownBeamWidth_ValueChanged;
+            // 
+            // labelBW
+            // 
+            labelBW.Dock = DockStyle.Top;
+            labelBW.Location = new Point(3, 215);
+            labelBW.Name = "labelBW";
+            labelBW.Size = new Size(169, 15);
+            labelBW.TabIndex = 9;
+            labelBW.Text = "Beam Width";
+            labelBW.TextAlign = ContentAlignment.MiddleCenter;
+            // 
+            // numericUpDownDirection
+            // 
+            numericUpDownDirection.Dock = DockStyle.Top;
+            numericUpDownDirection.Location = new Point(3, 192);
+            numericUpDownDirection.Maximum = new decimal(new int[] { 360, 0, 0, 0 });
+            numericUpDownDirection.Name = "numericUpDownDirection";
+            numericUpDownDirection.Size = new Size(169, 23);
+            numericUpDownDirection.TabIndex = 10;
+            numericUpDownDirection.ValueChanged += numericUpDownDirection_ValueChanged;
+            // 
+            // labelDirection
+            // 
+            labelDirection.Dock = DockStyle.Top;
+            labelDirection.Location = new Point(3, 177);
+            labelDirection.Name = "labelDirection";
+            labelDirection.Size = new Size(169, 15);
+            labelDirection.TabIndex = 7;
+            labelDirection.Text = "Direction";
+            labelDirection.TextAlign = ContentAlignment.MiddleCenter;
+            // 
+            // comboBox1
+            // 
+            comboBox1.DisplayMember = "omni";
+            comboBox1.Dock = DockStyle.Top;
+            comboBox1.FormattingEnabled = true;
+            comboBox1.Items.AddRange(new object[] { "omni", "directional" });
+            comboBox1.Location = new Point(3, 154);
+            comboBox1.Name = "comboBox1";
+            comboBox1.Size = new Size(169, 23);
+            comboBox1.TabIndex = 8;
+            comboBox1.SelectedIndexChanged += comboBox1_SelectedIndexChanged;
+            // 
+            // label17
+            // 
+            label17.Dock = DockStyle.Top;
+            label17.Location = new Point(3, 139);
+            label17.Name = "label17";
+            label17.Size = new Size(169, 15);
+            label17.TabIndex = 6;
+            label17.Text = "Radiation pattern";
+            label17.TextAlign = ContentAlignment.MiddleCenter;
+            // 
+            // trackBar3
+            // 
+            trackBar3.AutoSize = false;
+            trackBar3.Dock = DockStyle.Top;
+            trackBar3.Location = new Point(3, 115);
+            trackBar3.Name = "trackBar3";
+            trackBar3.Size = new Size(169, 24);
+            trackBar3.TabIndex = 2;
+            trackBar3.TickStyle = TickStyle.None;
+            trackBar3.Scroll += trackBar3_Scroll;
+            // 
+            // labelHeight
+            // 
+            labelHeight.Dock = DockStyle.Top;
+            labelHeight.Location = new Point(3, 100);
+            labelHeight.Name = "labelHeight";
+            labelHeight.Size = new Size(169, 15);
+            labelHeight.TabIndex = 3;
+            labelHeight.Text = "Height (m)";
+            labelHeight.TextAlign = ContentAlignment.MiddleCenter;
+            // 
+            // trackBar2
+            // 
+            trackBar2.AutoSize = false;
+            trackBar2.Dock = DockStyle.Top;
+            trackBar2.Location = new Point(3, 75);
+            trackBar2.Name = "trackBar2";
+            trackBar2.Size = new Size(169, 25);
+            trackBar2.TabIndex = 1;
+            trackBar2.TickStyle = TickStyle.None;
+            trackBar2.Scroll += trackBar2_Scroll;
+            // 
+            // labelTransmit
+            // 
+            labelTransmit.Dock = DockStyle.Top;
+            labelTransmit.Location = new Point(3, 60);
+            labelTransmit.Name = "labelTransmit";
+            labelTransmit.Size = new Size(169, 15);
+            labelTransmit.TabIndex = 4;
+            labelTransmit.Text = "Transmit power (dBm)";
+            labelTransmit.TextAlign = ContentAlignment.MiddleCenter;
+            // 
             // trackBar1
             // 
             trackBar1.AutoSize = false;
             trackBar1.Dock = DockStyle.Top;
+            trackBar1.LargeChange = 1;
             trackBar1.Location = new Point(3, 34);
             trackBar1.Name = "trackBar1";
-            trackBar1.Size = new Size(169, 25);
+            trackBar1.Size = new Size(169, 26);
             trackBar1.TabIndex = 0;
             trackBar1.TickStyle = TickStyle.None;
+            trackBar1.Scroll += trackBar1_Scroll;
+            // 
+            // labelGain
+            // 
+            labelGain.Dock = DockStyle.Top;
+            labelGain.Location = new Point(3, 19);
+            labelGain.Name = "labelGain";
+            labelGain.Size = new Size(169, 15);
+            labelGain.TabIndex = 5;
+            labelGain.Text = "Gain (dBi)";
+            labelGain.TextAlign = ContentAlignment.MiddleCenter;
             // 
             // button1
             // 
@@ -280,6 +397,7 @@
             // 
             // groupBox1
             // 
+            groupBox1.Controls.Add(button2);
             groupBox1.Controls.Add(comboBoxMode);
             groupBox1.Controls.Add(label1);
             groupBox1.Dock = DockStyle.Top;
@@ -354,113 +472,16 @@
             loggerTextBox.Size = new Size(715, 675);
             loggerTextBox.TabIndex = 0;
             // 
-            // trackBar2
+            // button2
             // 
-            trackBar2.AutoSize = false;
-            trackBar2.Dock = DockStyle.Top;
-            trackBar2.Location = new Point(3, 74);
-            trackBar2.Name = "trackBar2";
-            trackBar2.Size = new Size(169, 25);
-            trackBar2.TabIndex = 1;
-            trackBar2.TickStyle = TickStyle.None;
-            // 
-            // trackBar3
-            // 
-            trackBar3.AutoSize = false;
-            trackBar3.Dock = DockStyle.Top;
-            trackBar3.Location = new Point(3, 114);
-            trackBar3.Name = "trackBar3";
-            trackBar3.Size = new Size(169, 24);
-            trackBar3.TabIndex = 2;
-            trackBar3.TickStyle = TickStyle.None;
-            // 
-            // label14
-            // 
-            label14.Dock = DockStyle.Top;
-            label14.Location = new Point(3, 99);
-            label14.Name = "label14";
-            label14.Size = new Size(169, 15);
-            label14.TabIndex = 3;
-            label14.Text = "Height (m)";
-            label14.TextAlign = ContentAlignment.MiddleCenter;
-            // 
-            // label15
-            // 
-            label15.Dock = DockStyle.Top;
-            label15.Location = new Point(3, 59);
-            label15.Name = "label15";
-            label15.Size = new Size(169, 15);
-            label15.TabIndex = 4;
-            label15.Text = "Transmit power (dBm)";
-            label15.TextAlign = ContentAlignment.MiddleCenter;
-            // 
-            // label16
-            // 
-            label16.Dock = DockStyle.Top;
-            label16.Location = new Point(3, 19);
-            label16.Name = "label16";
-            label16.Size = new Size(169, 15);
-            label16.TabIndex = 5;
-            label16.Text = "Gain (dBi)";
-            label16.TextAlign = ContentAlignment.MiddleCenter;
-            // 
-            // label17
-            // 
-            label17.Dock = DockStyle.Top;
-            label17.Location = new Point(3, 138);
-            label17.Name = "label17";
-            label17.Size = new Size(169, 15);
-            label17.TabIndex = 6;
-            label17.Text = "Radiation pattern";
-            label17.TextAlign = ContentAlignment.MiddleCenter;
-            // 
-            // label18
-            // 
-            label18.Dock = DockStyle.Top;
-            label18.Location = new Point(3, 176);
-            label18.Name = "label18";
-            label18.Size = new Size(169, 15);
-            label18.TabIndex = 7;
-            label18.Text = "Direction";
-            label18.TextAlign = ContentAlignment.MiddleCenter;
-            // 
-            // comboBox1
-            // 
-            comboBox1.Dock = DockStyle.Top;
-            comboBox1.FormattingEnabled = true;
-            comboBox1.Items.AddRange(new object[] { "omni", "directional" });
-            comboBox1.Location = new Point(3, 153);
-            comboBox1.Name = "comboBox1";
-            comboBox1.Size = new Size(169, 23);
-            comboBox1.TabIndex = 8;
-            // 
-            // label19
-            // 
-            label19.Dock = DockStyle.Top;
-            label19.Location = new Point(3, 214);
-            label19.Name = "label19";
-            label19.Size = new Size(169, 15);
-            label19.TabIndex = 9;
-            label19.Text = "Beam Width";
-            label19.TextAlign = ContentAlignment.MiddleCenter;
-            // 
-            // numericUpDown1
-            // 
-            numericUpDown1.Dock = DockStyle.Top;
-            numericUpDown1.Location = new Point(3, 191);
-            numericUpDown1.Maximum = new decimal(new int[] { 360, 0, 0, 0 });
-            numericUpDown1.Name = "numericUpDown1";
-            numericUpDown1.Size = new Size(169, 23);
-            numericUpDown1.TabIndex = 10;
-            // 
-            // numericUpDown2
-            // 
-            numericUpDown2.Dock = DockStyle.Top;
-            numericUpDown2.Location = new Point(3, 229);
-            numericUpDown2.Maximum = new decimal(new int[] { 180, 0, 0, 0 });
-            numericUpDown2.Name = "numericUpDown2";
-            numericUpDown2.Size = new Size(169, 23);
-            numericUpDown2.TabIndex = 11;
+            button2.Dock = DockStyle.Top;
+            button2.Location = new Point(3, 57);
+            button2.Name = "button2";
+            button2.Size = new Size(169, 23);
+            button2.TabIndex = 2;
+            button2.Text = "Clear map";
+            button2.UseVisualStyleBackColor = true;
+            button2.Click += button2_Click;
             // 
             // Form1
             // 
@@ -478,6 +499,10 @@
             panel1.ResumeLayout(false);
             groupBox4.ResumeLayout(false);
             groupBox3.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)numericUpDownBeamWidth).EndInit();
+            ((System.ComponentModel.ISupportInitialize)numericUpDownDirection).EndInit();
+            ((System.ComponentModel.ISupportInitialize)trackBar3).EndInit();
+            ((System.ComponentModel.ISupportInitialize)trackBar2).EndInit();
             ((System.ComponentModel.ISupportInitialize)trackBar1).EndInit();
             groupBox2.ResumeLayout(false);
             groupBox1.ResumeLayout(false);
@@ -485,10 +510,6 @@
             mapPanel.ResumeLayout(false);
             panel3.ResumeLayout(false);
             panel3.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)trackBar2).EndInit();
-            ((System.ComponentModel.ISupportInitialize)trackBar3).EndInit();
-            ((System.ComponentModel.ISupportInitialize)numericUpDown1).EndInit();
-            ((System.ComponentModel.ISupportInitialize)numericUpDown2).EndInit();
             ResumeLayout(false);
         }
 
@@ -519,16 +540,17 @@
         private Label label8;
         private Label label7;
         private Label label6;
-        private Label label14;
+        private Label labelHeight;
         private TrackBar trackBar3;
         private TrackBar trackBar2;
-        private Label label15;
-        private Label label16;
-        private Label label18;
+        private Label labelTransmit;
+        private Label labelGain;
+        private Label labelDirection;
         private ComboBox comboBox1;
         private Label label17;
-        private NumericUpDown numericUpDown2;
-        private Label label19;
-        private NumericUpDown numericUpDown1;
+        private NumericUpDown numericUpDownBeamWidth;
+        private Label labelBW;
+        private NumericUpDown numericUpDownDirection;
+        private Button button2;
     }
 }

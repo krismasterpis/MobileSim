@@ -1,4 +1,5 @@
 using log4net.Appender;
+using log4net.Util;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -20,6 +21,20 @@ namespace MobileSim
         private const float ZoomStep = 0.1f;
         private const float MinZoom = 0.2f;
         private const float MaxZoom = 5.0f;
+
+        /*        double Gain = 17.0;             // Zysk anteny kierunkowej w dBi (typowe: 14–18 dBi)
+                double TransmitPower = 40.0;    // Moc nadawcza w dBm (40 dBm = 10 W)
+                double Height = 30.0;           // Wysokoœæ zawieszenia anteny (w metrach)
+                bool IsDirectional = true;      // Antena kierunkowa
+                double BeamWidth = 90.0;        // Szerokoœæ wi¹zki w stopniach (typowe 60–90°)
+                double Direction = 0.0;       // Kierunek g³ównej wi¹zki anteny (np. 120°)*/
+
+        double Gain = 5.0;              // Zysk anteny dookólnej (typowo 2–6 dBi)
+        double TransmitPower = 30.0;    // Moc nadawcza w dBm (30 dBm = 1 W)
+        double Height = 10.0;           // Wysokoœæ na budynku lub maszcie
+        bool IsDirectional = false;     // Antena dookólna (omni)
+        double BeamWidth = 360.0;       // Pe³na dookólna charakterystyka
+        double Direction = 0.0;         // Kierunek nieistotny przy dookólnej
 
         private int basesCount = 0;
         private int obstaclesCount = 0;
@@ -47,6 +62,25 @@ namespace MobileSim
             comboBoxMode.SelectedIndexChanged += comboBoxMode_SelectedIndexChanged;
             mapPanel.MouseWheel += mapPanel_MouseWheel;
             comboBoxMode.SelectedIndex = 0;
+            comboBox1.SelectedIndex = 0;
+            trackBar1.Minimum = 0;
+            trackBar1.Maximum = 20;
+            trackBar1.Value = (int)Gain;
+            labelGain.Text = $"Gain (dBi) = {Gain}";
+            trackBar2.Minimum = 0;
+            trackBar2.Maximum = 60;
+            trackBar2.Value = (int)TransmitPower;
+            labelTransmit.Text = $"Transmit power (dBm) = {TransmitPower}";
+            trackBar3.Minimum = 0;
+            trackBar3.Maximum = 50;
+            trackBar2.Value = (int)Height;
+            labelHeight.Text = $"Height (m) = {Height}";
+            numericUpDownDirection.Minimum = 0;
+            numericUpDownDirection.Maximum = 360;
+            numericUpDownDirection.Value = 360;
+            numericUpDownBeamWidth.Minimum = 0;
+            numericUpDownBeamWidth.Maximum = 360;
+            numericUpDownBeamWidth.Value = 90;
             InitMap();
         }
 
@@ -177,12 +211,12 @@ namespace MobileSim
             int X = (int)Math.Floor((double)(x / 10));
             int Y = (int)Math.Floor((double)(y / 10));
             // Upewnij siê, ¿e kursor znajduje siê w granicach obrazu
-            if (X >= 0 && X < MapSize/CellSize && Y >= 0 && Y < MapSize / CellSize)
+            if (X >= 0 && X < MapSize / CellSize && Y >= 0 && Y < MapSize / CellSize)
             {
                 label6.Text = $"X: {X}";
                 label7.Text = $"Y: {Y}";
-                label8.Text = $"Cell type:{map[X,Y].Type.ToString()}";
-                label9.Text = $"Signal strength:{Math.Round(map[X, Y].signalStrength,3).ToString()}";
+                label8.Text = $"Cell type:{map[X, Y].Type.ToString()}";
+                label9.Text = $"Signal strength:{Math.Round(map[X, Y].signalStrength, 3).ToString()}";
                 label12.Text = $"X: {map[X, Y].bestStationCords[0]}";
                 label11.Text = $"Y: {map[X, Y].bestStationCords[1]}";
             }
@@ -200,9 +234,9 @@ namespace MobileSim
             if (x < 0 || y < 0 || x >= GridCount || y >= GridCount) return;
             if (map[x, y].Type != CellType.Empty)
             {
-                if(map[x, y].Type == CellType.BaseStation)
+                if (map[x, y].Type == CellType.BaseStation)
                 {
-                    if(basesCount > 0)
+                    if (basesCount > 0)
                     {
                         basesCount--;
                         baseStations.RemoveAt(baseStations.FindIndex(item => item.X == x && item.Y == y));
@@ -213,7 +247,7 @@ namespace MobileSim
                             {
                                 if (map[gx, gy].bestStationCords[0] == x && map[gx, gy].bestStationCords[1] == y)
                                 {
-                                    map[gx, gy].Clear(force:false);
+                                    map[gx, gy].Clear(force: false);
                                 }
                             }
                         }
@@ -231,7 +265,7 @@ namespace MobileSim
                 if (map[x, y].Type == CellType.Receiver)
                 {
                     receiverDev = null;
-                    label4.Text = $"Receivers (0/1)";
+                    label5.Text = $"Receivers (0/1)";
                 }
                 if (map[x, y].Type == CellType.Sender)
                 {
@@ -249,7 +283,7 @@ namespace MobileSim
                         {
                             map[x, y].Type = CellType.BaseStation;
                             //BaseStation station = new BaseStation(x, y, 6, 30,true,90,90);
-                            BaseStation station = new BaseStation(x, y, 2, 10);
+                            BaseStation station = new BaseStation(x, y, Gain, TransmitPower, IsDirectional, Direction, BeamWidth);
                             baseStations.Add(station);
                             basesCount++;
                             label2.Text = $"Base stations ({basesCount}/10)";
@@ -288,40 +322,6 @@ namespace MobileSim
             Debug.WriteLine($"Selected X: {x}, Y:{y}");
         }
 
-/*        private void DrawSignalCircle(Graphics g, BaseStation station)
-        {
-            for (int gx = 0; gx < 100; gx++)
-            {
-                for (int gy = 0; gy < 100; gy++)
-                {
-                    int centerX = gx * CellSize + CellSize / 2;
-                    int centerY = gy * CellSize + CellSize / 2;
-                    double obstacleLoss = 0;
-                    foreach (var obs in obstacles)
-                    {
-                        if (IntersectsLine(obs, station.X * CellSize + CellSize / 2, station.Y * CellSize + CellSize / 2, gx * CellSize + CellSize / 2, gy * CellSize + CellSize / 2))
-                        {
-                            obstacleLoss += 80; // ka¿dy budynek np. -5 dB
-                        }
-                    }
-
-                    double signal = station.CalculateSignalStrength(gx, gy, obstacleLoss);
-                    if(signal > -80)
-                    {
-                        Color color = SignalStrengthToColor(signal);
-                        if(signal >= map[gx, gy].signalStrength)
-                        {
-                            using (var brush = new SolidBrush(color))
-                            {
-                                g.FillRectangle(brush, gx * CellSize, gy * CellSize, CellSize, CellSize);
-                                map[gx, gy].signalStrength = signal;
-                            }
-                        }
-                    }
-                }
-            }
-        }*/
-
         private void DrawSignalCircle(Graphics g, List<BaseStation> stations, bool obstacleplaced = false)
         {
             if (obstacleplaced)
@@ -340,7 +340,7 @@ namespace MobileSim
                 {
                     int centerX = gx * CellSize + CellSize / 2;
                     int centerY = gy * CellSize + CellSize / 2;
-                    foreach(var station in stations)
+                    foreach (var station in stations)
                     {
                         double obstacleLoss = 0;
                         foreach (var obs in obstacles)
@@ -367,7 +367,7 @@ namespace MobileSim
             {
                 for (int gy = 0; gy < 100; gy++)
                 {
-                    if(map[gx, gy].signalStrength > -100)
+                    if (map[gx, gy].signalStrength > -100)
                     {
                         Color color = SignalStrengthToColor(map[gx, gy].signalStrength);
                         using (var brush = new SolidBrush(color))
@@ -437,49 +437,15 @@ namespace MobileSim
             return t >= 0 && t <= 1 && u >= 0 && u <= 1;
         }
 
-        public BaseStation FindBestStation(List<BaseStation> stations, MobileDevice sender, MobileDevice receiver, List<Rectangle> obstacles)
-        {
-            BaseStation bestStation = null;
-            double maxSignal = -80;
-
-            foreach (var station in stations)
-            {
-                //double signal = station.IsWithinCoverage2(receiver.X, receiver.Y, sender.X, sender.Y, map);
-                bool inCoverage = station.IsWithinCoverage2(receiver.X, receiver.Y, sender.X, sender.Y, map);
-                if (inCoverage)
-                {
-                    Logg($"Sender ({sender.X};{sender.Y}) connected with receiver ({receiver.X};{receiver.Y}) via base station ({station.X};{station.Y})");
-                    bestStation = station;
-                }
-                else
-                {
-                    Logg("Sender or Receiver is out of all station's ranges");
-                }
-                if(baseStations.Count() > 2)
-                {
-                    bestPath = PathFinder.findBestPath2(map, baseStations, sender, receiver);
-                }
-                /*Debug.WriteLine($"Signal power : {signal}");
-                if (signal > maxSignal)
-                {
-                    maxSignal = signal;
-                    bestStation = station;
-                }*/
-            }
-
-            return bestStation;
-        }
-
         private void DrawSignalLine(Path path, PaintEventArgs e, Graphics g)
         {
-            for(int i = 0; i < path.stations.Count()-1; i++)
+            for (int i = 0; i < path.stations.Count() - 1; i++)
             {
                 using (Pen Pen = new Pen(Color.Red, 3))
                 {
                     // Punkty pocz¹tkowy i koñcowy linii
                     Point start = new Point(path.stations[i].X * CellSize + CellSize / 2, path.stations[i].Y * CellSize + CellSize / 2);
-                    Point end = new Point(path.stations[i+1].X * CellSize + CellSize / 2, path.stations[i+1].Y * CellSize + CellSize / 2);
-
+                    Point end = new Point(path.stations[i + 1].X * CellSize + CellSize / 2, path.stations[i + 1].Y * CellSize + CellSize / 2);
                     // Narysuj liniê
                     e.Graphics.DrawLine(Pen, start, end);
                 }
@@ -490,7 +456,7 @@ namespace MobileSim
                 Point sender = new Point(senderDev.X * CellSize + CellSize / 2, senderDev.Y * CellSize + CellSize / 2);
                 Point receiver = new Point(receiverDev.X * CellSize + CellSize / 2, receiverDev.Y * CellSize + CellSize / 2);
                 Point start = new Point(path.stations[0].X * CellSize + CellSize / 2, path.stations[0].Y * CellSize + CellSize / 2);
-                Point end = new Point(path.stations[path.stations.Count()-1].X * CellSize + CellSize / 2, path.stations[path.stations.Count()-1].Y * CellSize + CellSize / 2);
+                Point end = new Point(path.stations[path.stations.Count() - 1].X * CellSize + CellSize / 2, path.stations[path.stations.Count() - 1].Y * CellSize + CellSize / 2);
 
                 // Narysuj liniê
                 e.Graphics.DrawLine(Pen, sender, start);
@@ -509,23 +475,109 @@ namespace MobileSim
         }
         private void button1_Click(object sender, EventArgs e)
         {
-            /*            bestStation = FindBestStation(baseStations, senderDev, receiverDev, obstacles);
-                        if (bestStation != null)
-                        {
-                            Debug.WriteLine($"Best station is located on X:{bestStation.X} and Y:{bestStation.Y}");
-                            signalLineEnab = true;
-                        }*/
             if (baseStations.Count() > 0)
             {
-                bestPath = PathFinder.findBestPath2(map, baseStations, senderDev, receiverDev);
-                if (bestPath != null)
+                bool senderInCoverage = senderDev.IsInCoverage(map);
+                bool receiverInCoverage = receiverDev.IsInCoverage(map);
+                if (senderInCoverage && receiverInCoverage)
                 {
-                    Logg($"Sender ({senderDev.X};{senderDev.Y}) connected with receiver ({receiverDev.X};{receiverDev.Y})");
-                    signalLineEnab = true;
+                    Logg($"Sender ({senderDev.X};{senderDev.Y}) connected with receiver ({receiverDev.X};{receiverDev.Y})!");
+                    if (map[senderDev.X, senderDev.Y].bestStationCords[0] == map[receiverDev.X, receiverDev.Y].bestStationCords[0] && map[senderDev.X, senderDev.Y].bestStationCords[1] == map[receiverDev.X, receiverDev.Y].bestStationCords[1])
+                    {
+                        try
+                        {
+                            bestPath = new Path();
+                            bestPath.stations.Add(baseStations[baseStations.FindIndex(item => item.X == map[senderDev.X, senderDev.Y].bestStationCords[0] && item.Y == map[senderDev.X, senderDev.Y].bestStationCords[1])]);
+                            signalLineEnab = true;
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine(ex.Message);
+                        }
+                    }
+                    else
+                    {
+                        bestPath = PathFinder.findBestPath2(map, baseStations, senderDev, receiverDev);
+                        if (bestPath != null)
+                        {
+                            signalLineEnab = true;
+                        }
+                        else
+                        {
+                            Logg("There are no available routes!");
+                        }
+                    }
                 }
                 else
                 {
-                    Logg("Sender or Receiver is out of all station's ranges");
+                    if (senderInCoverage)
+                    {
+                        Logg("Receiver is out of all base station's ranges!");
+                    }
+                    else if (receiverInCoverage)
+                    {
+                        Logg("Sender is out of all base station's ranges!");
+                    }
+                    else
+                    {
+                        Logg("Sender and Receiver are out of all base station's ranges!");
+                    }
+                }
+            }
+            pictureBoxMap.Invalidate();
+        }
+
+        private void trackBar1_Scroll(object sender, EventArgs e)
+        {
+            Gain = trackBar1.Value;
+            labelGain.Text = $"Gain (dBi) = {Gain}";
+        }
+
+        private void trackBar2_Scroll(object sender, EventArgs e)
+        {
+            TransmitPower = trackBar2.Value;
+            labelTransmit.Text = $"Transmit power (dBm) = {TransmitPower}";
+        }
+
+        private void trackBar3_Scroll(object sender, EventArgs e)
+        {
+            Height = trackBar3.Value;
+            labelHeight.Text = $"Height (m) = {Height}";
+        }
+
+        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (comboBox1.SelectedIndex == 0)
+            {
+                IsDirectional = false;
+            }
+            else
+            {
+                IsDirectional = true;
+            }
+        }
+
+        private void numericUpDownDirection_ValueChanged(object sender, EventArgs e)
+        {
+            Direction = (double)numericUpDownDirection.Value;
+            labelDirection.Text = $"Direction ({Direction})";
+        }
+
+        private void numericUpDownBeamWidth_ValueChanged(object sender, EventArgs e)
+        {
+            BeamWidth = (double)numericUpDownBeamWidth.Value;
+            labelBW.Text = $"Beam Width ({BeamWidth})";
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            obstacles.Clear();
+            baseStations.Clear();
+            for (int gx = 0; gx < 100; gx++)
+            {
+                for (int gy = 0; gy < 100; gy++)
+                {
+                    map[gx, gy].Clear(true);
                 }
             }
             pictureBoxMap.Invalidate();

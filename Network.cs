@@ -1,15 +1,22 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.Drawing.Drawing2D;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using static System.Collections.Specialized.BitVector32;
+using static System.Windows.Forms.AxHost;
 
 namespace MobileSim
 {
     public class BaseStation
     {
+        private int scale = 10;
+        private int pathLossScale = 3;
         public int X { get; set; }
         public int Y { get; set; }
         public double Gain { get; set; }
@@ -22,8 +29,8 @@ namespace MobileSim
         {
             X = x;
             Y = y;
-            Gain = gain;
-            TransmitPower = transmitPower;
+            Gain = gain/scale;
+            TransmitPower = transmitPower / scale;
             IsDirectional = isdirectional;
             Direction = direction;
             BeamWidth = beamwidth;
@@ -35,19 +42,8 @@ namespace MobileSim
             double distance = Math.Sqrt(dx * dx + dy * dy);
             if (distance == 0) distance = 1;
 
-            double pathLoss = 20 * Math.Log10(distance) * 3;
-            return TransmitPower + Gain - pathLoss - obstacleLoss;
-        }
-        public double IsWithinCoverage(int targetX, int targetY, int senderX, int senderY, double obstacleLoss = 0)
-        {
-            // Oblicz odległość
-            float dx = targetX - X;
-            float dy = targetY - Y;
-            float sdx = senderX - X;
-            float sdy = senderY - Y;
-            double distance = Math.Sqrt(dx * dx + dy * dy) + Math.Sqrt(sdx * sdx + sdy * sdy);
+            double pathLoss = 20 * Math.Log10(distance) * pathLossScale;
 
-            // Sprawdź kąt (dla anten kierunkowych)
             if (IsDirectional)
             {
                 double angleToTarget = Math.Atan2(dx, -dy) * (180.0 / Math.PI);
@@ -55,29 +51,16 @@ namespace MobileSim
                 {
                     angleToTarget += 360;
                 }
-                double diff = Math.Abs(angleToTarget - Direction);
-                if (diff > BeamWidth / 2)
-                    return -1000; // poza zakresem kierunkowym
+                //double diff = Math.Abs(angleToTarget - Direction);
+                double diff = (angleToTarget + 360) % 360;
+                double start = (Direction - BeamWidth / 2 + 360) % 360;
+                double end = (Direction + BeamWidth / 2 + 360) % 360;
+                if (targetX != X | targetY != Y)
+                    if (diff < start || diff > end)
+                        return -1000; // poza zakresem kierunkowym
             }
 
-            // Sygnał odebrany (prosty model propagacji)
-            double Pr_dBm = TransmitPower + Gain - 20 * Math.Log10(distance + 1) - obstacleLoss;
-
-            //return Pr_dBm >= -80; // np. minimalna moc odbiorcza
-            return Pr_dBm;
-        }
-
-        public bool IsWithinCoverage2(int targetX, int targetY, int senderX, int senderY, MapCell[,] map)
-        {
-            bool isInCoverage = false;
-            if (map[senderX, senderY].bestStationCords[0] == X && map[senderX, senderY].bestStationCords[1] == Y)
-            {
-                if (map[targetX, targetY].bestStationCords[0] == X && map[targetX, targetY].bestStationCords[1] == Y)
-                {
-                    isInCoverage = true;
-                }
-            }
-            return isInCoverage;
+            return TransmitPower + Gain - pathLoss - obstacleLoss;
         }
 
         private double NormalizeAngle(double angle)
@@ -98,6 +81,19 @@ namespace MobileSim
             X = x;
             Y = y;
         }
+
+        public bool IsInCoverage(MapCell[,] map)
+        {
+            try
+            {
+                if (map[map[X, Y].bestStationCords[0], map[X, Y].bestStationCords[1]].Type == CellType.BaseStation)
+                {
+                    return true;
+                }
+            }
+            catch { return false; }
+            return false;
+        }
     }
     public class PathFinder
     {
@@ -108,48 +104,122 @@ namespace MobileSim
             List<BaseStation> remaingStations = new List<BaseStation>();
             List<Path> PathList = new List<Path>();
             Path Path = new Path();
-            var count = 0;
-            var perms = Fact(stations.Count()-2);
-            var smallestDist = 100000.0;
-            while(count<perms)
+            var perms = GetAllPathsWithOptionalStations(stations, senderStation, receiverStation);
+            var bestScore = 100000.0;
+            double dist;
+            BaseStation station = null;
+            double alpha = 1;
+            double beta = 0.5;
+            List<List<BaseStation>> newPerms = new List<List<BaseStation>>();
+            if (perms.Count > 0)
             {
-                var baseCnt = 0;
-                var pathTemp = new Path();
-                remaingStations.AddRange(stations);
-                remaingStations.Remove(senderStation);
-                //remaingStations.Remove(receiverStation);
-                pathTemp.stations.Add(senderStation);
-                baseCnt++;
-                var result = GetNearestStation2(senderStation, remaingStations, PathList, baseCnt);
-                var nearestStation = result.Item1;
-                var distance = result.Item2;
-                pathTemp.stations.Add(nearestStation);
-                baseCnt++;
-                pathTemp.distance += distance;
-                remaingStations.Remove(nearestStation);
-                while (nearestStation != receiverStation)
+                var i = 1;
+                while(station != receiverStation && newPerms.Count()!=1)
                 {
-                    result = GetNearestStation2(nearestStation, remaingStations, PathList, baseCnt);
-                    var nearestStation2 = result.Item1;
-                    distance = result.Item2;
-                    if (nearestStation2 != nearestStation)
+                    if(newPerms.Count() > 0)
                     {
-                        nearestStation = nearestStation2;
-                        pathTemp.stations.Add(nearestStation);
-                        baseCnt++;
-                        pathTemp.distance += distance;
-                        remaingStations.Remove(nearestStation);
+                        perms.Clear();
+                        perms.AddRange(newPerms);
+                        newPerms.Clear();
                     }
+                    for(int j = 0; j < perms.Count(); j++)
+                    {
+                        if (i < perms[j].Count())
+                        {
+                            double distance = 0.0;
+                            var pathTemp = new Path();
+                            float dx = perms[j][i - 1].X - perms[j][i].X;
+                            float dy = perms[j][i - 1].Y - perms[j][i].Y;
+                            float dxend = perms[j][i].X - receiverStation.X;
+                            float dyend = perms[j][i].Y - receiverStation.Y;
+                            var temp = Math.Sqrt(dx * dx + dy * dy);
+                            var tempEnd = Math.Sqrt(dxend * dxend + dyend * dyend);
+                            var score = alpha * temp + beta * tempEnd;
+                            var intersectedcells = GetCellsOnLine(map, perms[j][i - 1].X, perms[j][i - 1].Y, perms[j][i].X, perms[j][i].Y);
+                            if (intersectedcells.Any(obj => obj.signalStrength < -80))
+                            {
+                                continue;
+                            }
+                            if (intersectedcells.Any(obj => obj.Type == CellType.Obstacle))
+                            {
+                                score += 50;
+                            }
+                            if (bestScore > score)
+                            {
+                                station = perms[j][i];
+                                bestScore = score;
+                            }
+                        }
+                    }
+                    for (int j = 0; j < perms.Count(); j++)
+                    {
+                        if (i < perms[j].Count())
+                        {
+                            if (perms[j][i] == station)
+                            {
+                                newPerms.Add(perms[j]);
+                            }
+                        }
+                    }
+                    i++;
+                    bestScore = 10000;
                 }
-                if (smallestDist > distance)
-                {
-                    smallestDist = pathTemp.distance;
-                }
-                PathList.Add(pathTemp);
-                count++;
+                Path.stations.AddRange(newPerms[0]);
             }
-            Path = PathList[PathList.FindIndex(item => item.distance == smallestDist)];
+            else //przypadek dla mniej niż 3 stacji
+            {
+                if (senderStation == receiverStation)
+                {
+                    Path.stations.Add(senderStation);
+                    Path.distance = 0;
+                }
+                else
+                {
+                    Path.stations.Add(senderStation);
+                    Path.stations.Add(receiverStation);
+                    Path.distance = 0;
+                }
+            }
             return Path;
+        }
+        private static List<MapCell> GetCellsOnLine(MapCell[,] map, int x0, int y0, int x1, int y1)
+        {
+            var cells = new List<MapCell>();
+
+            int dx = Math.Abs(x1 - x0);
+            int dy = Math.Abs(y1 - y0);
+            int sx = x0 < x1 ? 1 : -1;
+            int sy = y0 < y1 ? 1 : -1;
+            int err = dx - dy;
+
+            int width = map.GetLength(0);
+            int height = map.GetLength(1);
+
+            while (true)
+            {
+                // Upewnij się, że punkt jest w zakresie mapy
+                if (x0 >= 0 && x0 < width && y0 >= 0 && y0 < height)
+                {
+                    cells.Add(map[x0, y0]);
+                }
+
+                if (x0 == x1 && y0 == y1)
+                    break;
+
+                int e2 = 2 * err;
+                if (e2 > -dy)
+                {
+                    err -= dy;
+                    x0 += sx;
+                }
+                if (e2 < dx)
+                {
+                    err += dx;
+                    y0 += sy;
+                }
+            }
+
+            return cells;
         }
 
         public static Path findBestPath2(MapCell[,] map, List<BaseStation> stations, MobileDevice sender, MobileDevice receiver)
@@ -160,29 +230,70 @@ namespace MobileSim
             List<Path> PathList = new List<Path>();
             Path Path = new Path();
             var perms = GetAllPathsWithOptionalStations(stations, senderStation, receiverStation);
-            var smallestDist = 100000.0;
+            var bestScore = 100000.0;
+            double dist;
+            BaseStation station = null;
+            double alpha = 1;
+            double beta = 0.1;
+            double gamma = 1;
+            List<List<BaseStation>> newPerms = new List<List<BaseStation>>();
+            List<double> scores = new List<double>();
             if (perms.Count > 0)
             {
                 foreach (var perm in perms)
                 {
                     double distance = 0.0;
                     var pathTemp = new Path();
-                    for (int i = 0; i < perm.Count() - 1; i++)
+                    var score = 0.0;
+                    for (int i = 1; i < perm.Count(); i++)
                     {
-                        float dx = perm[i].X - perm[i + 1].X;
-                        float dy = perm[i].Y - perm[i + 1].Y;
+                        float dx = perm[i - 1].X - perm[i].X;
+                        float dy = perm[i - 1].Y - perm[i].Y;
+                        float dxend = perm[i].X - receiverStation.X;
+                        float dyend = perm[i].Y - receiverStation.Y;
                         var temp = Math.Sqrt(dx * dx + dy * dy);
-                        distance += temp;
+                        var tempEnd = Math.Sqrt(dxend * dxend + dyend * dyend);
+                        score += alpha * temp + beta * tempEnd;
+                        var intersectedcells = GetCellsOnLine(map, perm[i - 1].X, perm[i - 1].Y, perm[i].X, perm[i].Y);
+                        if (intersectedcells.Any(obj => obj.signalStrength < -80))
+                        {
+                            score = -1;
+                            break;
+                        }
+                        if (intersectedcells.Any(obj => obj.Type == CellType.Obstacle))
+                        {
+                            score += 50;
+                        }
                     }
-                    pathTemp.stations.AddRange(perm);
-                    pathTemp.distance = distance;
-                    if (smallestDist > distance)
+                    if(score >= 0)
                     {
-                        smallestDist = distance;
+                        float dxstart = perm[0].X - sender.X;
+                        float dystart = perm[0].Y - sender.Y;
+                        var tempStart = Math.Sqrt(dxstart * dxstart + dystart * dystart);
+                        score += tempStart * gamma;
+                        float dxendd = perm.Last().X - receiver.X;
+                        float dyendd = perm.Last().Y - receiver.Y;
+                        var tempEndd = Math.Sqrt(dxendd * dxendd + dyendd * dyendd);
+                        score += tempEndd * gamma;
+                        pathTemp.stations.AddRange(perm);
+                        pathTemp.score = score;
+                        scores.Add(score);
+                        if (bestScore > score)
+                        {
+                            bestScore = score;
+                        }
+                        PathList.Add(pathTemp);
                     }
-                    PathList.Add(pathTemp);
                 }
-                Path = PathList[PathList.FindIndex(item => item.distance == smallestDist)];
+                if(PathList.Count() > 0)
+                {
+                    Path = PathList[PathList.FindIndex(item => item.score <= bestScore && item.score >= 0)];
+                    Debug.WriteLine(bestScore);
+                }
+                else
+                {
+                    Path = null;
+                }
             }
             else //przypadek dla mniej niż 3 stacji
             {
@@ -359,8 +470,34 @@ namespace MobileSim
                 foreach (var perm in permutations)
                 {
                     var path = new List<T> { start };
+                    //var path = new List<T>();
                     path.AddRange(perm);
                     path.Add(end);
+                    allPaths.Add(path);
+                }
+            }
+
+            return allPaths;
+        }
+
+        public static List<List<T>> GetAllPathsWithOptionalStations2<T>(List<T> allStations, T start, T end)
+        {
+            var middleStations = new List<T>(allStations);
+            //middleStations.Remove(start);
+            //middleStations.Remove(end);
+
+            var allPaths = new List<List<T>>();
+
+            var allSubsets = GetAllSubsets(middleStations);
+            foreach (var subset in allSubsets)
+            {
+                var permutations = GetPermutations(subset);
+                foreach (var perm in permutations)
+                {
+                    //var path = new List<T> { start };
+                    var path = new List<T>();
+                    path.AddRange(perm);
+                    //path.Add(end);
                     allPaths.Add(path);
                 }
             }
@@ -394,6 +531,8 @@ namespace MobileSim
     public class Path
     {
         public List<BaseStation> stations = new List<BaseStation>();
+        public List<double> distances = new List<double>();
         public double distance;
+        public double score;
     }
 }
